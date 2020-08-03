@@ -2,9 +2,8 @@
 
 #include <ctype.h>
 #include <stdio.h>
-// #include <sys/resource.h>
+#include <sys/resource.h>
 #include <sys/time.h>
-#include <time.h>
 
 #include "dictionary.h"
 
@@ -16,7 +15,7 @@
 #define DICTIONARY "dictionaries/large"
 
 // Prototype
-// double calculate(const struct rusage *b, const struct rusage *a);
+double calculate(const struct rusage *b, const struct rusage *a);
 
 int main(int argc, char *argv[])
 {
@@ -28,21 +27,21 @@ int main(int argc, char *argv[])
     }
 
     // Structures for timing data
-    // struct rusage before, after;
+    struct rusage before, after;
 
     // Benchmarks
-    clock_t start, end ;
+    // clock_t start, end ;
     double time_load = 0.0, time_check = 0.0, time_size = 0.0, time_unload = 0.0;
 
     // Determine dictionary to use
     char *dictionary = (argc == 3) ? argv[1] : DICTIONARY;
 
     // Load dictionary
-    // getrusage(RUSAGE_SELF, &before);
-    start = clock();
+    getrusage(RUSAGE_SELF, &before);
+    // start = clock();
     bool loaded = load(dictionary);
-    end = clock();
-    // getrusage(RUSAGE_SELF, &after);
+    // end = clock();
+    getrusage(RUSAGE_SELF, &after);
 
     // Exit if dictionary not loaded
     if (!loaded)
@@ -52,8 +51,8 @@ int main(int argc, char *argv[])
     }
 
     // Calculate time to load dictionary
-    // time_load = calculate(&before, &after);
-    time_load = ((double)(end-start))/CLOCKS_PER_SEC ;
+    time_load = calculate(&before, &after);
+    // time_load = ((double)(end-start))/CLOCKS_PER_SEC ;
     // Try to open text
     char *text = (argc == 3) ? argv[2] : argv[1];
     FILE *file = fopen(text, "r");
@@ -112,15 +111,15 @@ int main(int argc, char *argv[])
             words++;
 
             // Check word's spelling
-            // getrusage(RUSAGE_SELF, &before);
-            start = clock();
+            getrusage(RUSAGE_SELF, &before);
+            // start = clock();
             bool misspelled = !check(word);
-            end = clock();
-            // getrusage(RUSAGE_SELF, &after);
+            // end = clock();
+            getrusage(RUSAGE_SELF, &after);
 
             // Update benchmark
-            // time_check += calculate(&before, &after);
-            time_check += ((double)(end-start))/CLOCKS_PER_SEC ;
+            time_check += calculate(&before, &after);
+            // time_check += ((double)(end-start))/CLOCKS_PER_SEC ;
             // Print word if misspelled
             if (misspelled)
             {
@@ -146,21 +145,21 @@ int main(int argc, char *argv[])
     fclose(file);
 
     // Determine dictionary's size
-    // getrusage(RUSAGE_SELF, &before);
-    start = clock();
+    getrusage(RUSAGE_SELF, &before);
+    // start = clock();
     unsigned int n = size();
-    end = clock();
-    // getrusage(RUSAGE_SELF, &after);
+    // end = clock();
+    getrusage(RUSAGE_SELF, &after);
 
     // Calculate time to determine dictionary's size
-    // time_size = calculate(&before, &after);
-    time_size = ((double)(end-start))/CLOCKS_PER_SEC ;
+    time_size = calculate(&before, &after);
+    // time_size = ((double)(end-start))/CLOCKS_PER_SEC ;
     // Unload dictionary
-    // getrusage(RUSAGE_SELF, &before);
-    start = clock();
+    getrusage(RUSAGE_SELF, &before);
+    // start = clock();
     bool unloaded = unload();
-    end = clock();
-    // getrusage(RUSAGE_SELF, &after);
+    // end = clock();
+    getrusage(RUSAGE_SELF, &after);
 
     // Abort if dictionary not unloaded
     if (!unloaded)
@@ -170,8 +169,8 @@ int main(int argc, char *argv[])
     }
 
     // Calculate time to unload dictionary
-    // time_unload = calculate(&before, &after);
-    time_unload = ((double)(end-start))/CLOCKS_PER_SEC ;
+    time_unload = calculate(&before, &after);
+    // time_unload = ((double)(end-start))/CLOCKS_PER_SEC ;
     // Report benchmarks
     printf("\nWORDS MISSPELLED:     %d\n", misspellings);
     printf("WORDS IN DICTIONARY:  %d\n", n);
@@ -188,18 +187,18 @@ int main(int argc, char *argv[])
 }
 
 // Returns number of seconds between b and a
-// double calculate(const struct rusage *b, const struct rusage *a)
-// {
-//     if (b == NULL || a == NULL)
-//     {
-//         return 0.0;
-//     }
-//     else
-//     {
-//         return ((((a->ru_utime.tv_sec * 1000000 + a->ru_utime.tv_usec) -
-//                   (b->ru_utime.tv_sec * 1000000 + b->ru_utime.tv_usec)) +
-//                  ((a->ru_stime.tv_sec * 1000000 + a->ru_stime.tv_usec) -
-//                   (b->ru_stime.tv_sec * 1000000 + b->ru_stime.tv_usec)))
-//                 / 1000000.0);
-//     }
-// }
+double calculate(const struct rusage *b, const struct rusage *a)
+{
+    if (b == NULL || a == NULL)
+    {
+        return 0.0;
+    }
+    else
+    {
+        return ((((a->ru_utime.tv_sec * 1000000 + a->ru_utime.tv_usec) -
+                  (b->ru_utime.tv_sec * 1000000 + b->ru_utime.tv_usec)) +
+                 ((a->ru_stime.tv_sec * 1000000 + a->ru_stime.tv_usec) -
+                  (b->ru_stime.tv_sec * 1000000 + b->ru_stime.tv_usec)))
+                / 1000000.0);
+    }
+}
